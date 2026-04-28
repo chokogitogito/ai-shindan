@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>業務改善AI診断 | 無料診断ツール</title>
+  <style>
+    /* ===== リセット・ベース ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Yu Gothic Medium', 'Meiryo', sans-serif;
+      background: #f0f4f8;
+      color: #1a202c;
+      min-height: 100vh;
+    }
+
+    /* ===== ヘッダー ===== */
+    header {
+      background: linear-gradient(135deg, #1a56db 0%, #0e3fa8 100%);
+      color: #fff;
+      padding: 20px 16px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    header .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.4);
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+    }
+    header h1 {
+      font-size: clamp(22px, 5vw, 32px);
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      line-height: 1.3;
+    }
+    header p {
+      margin-top: 8px;
+      font-size: clamp(13px, 3vw, 15px);
+      opacity: 0.9;
+    }
+
+    /* ===== プログレスバー ===== */
+    .progress-wrap {
+      background: #fff;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .step-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      flex: 1;
+      max-width: 140px;
+    }
+    .step-circle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      border: 2px solid #cbd5e0;
+      background: #fff;
+      color: #a0aec0;
+      transition: all 0.3s;
+    }
+    .step-circle.active { background: #1a56db; border-color: #1a56db; color: #fff; }
+    .step-circle.done { background: #48bb78; border-color: #48bb78; color: #fff; }
+    .step-label {
+      font-size: 11px;
+      color: #718096;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .step-label.active { color: #1a56db; font-weight: 700; }
+    .step-label.done { color: #48bb78; }
+    .step-line {
+      flex: 1;
+      height: 2px;
+      background: #e2e8f0;
+      margin-bottom: 16px;
+      max-width: 60px;
+      transition: background 0.3s;
+    }
+    .step-line.done { background: #48bb78; }
+
+    /* ===== メインコンテンツ ===== */
+    main { max-width: 680px; margin: 0 auto; padding: 24px 16px 60px; }
+
+    /* ===== カード ===== */
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+      padding: 32px 28px;
+      margin-bottom: 20px;
+      animation: fadeIn 0.4s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ===== セクションタイトル ===== */
+    .section-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: #1a202c;
+      margin-bottom: 6px;
+    }
+    .section-sub {
+      font-size: 14px;
+      color: #718096;
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+
+    /* ===== STEP1 メールフォーム ===== */
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 8px;
+    }
+    .form-input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 16px;
+      font-family: inherit;
+      color: #1a202c;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+    .form-input:focus { border-color: #1a56db; }
+    .form-input.error { border-color: #e53e3e; }
+    .error-msg {
+      color: #e53e3e;
+      font-size: 13px;
+      margin-top: 6px;
+      display: none;
+    }
+    .privacy-note {
+      margin-top: 14px;
+      font-size: 12px;
+      color: #a0aec0;
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      line-height: 1.5;
+    }
+    .privacy-note svg { flex-shrink: 0; margin-top: 1px; }
+
+    /* ===== ボタン ===== */
+    .btn-primary {
+      display: block;
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #1a56db, #0e3fa8);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 17px;
+      font-weight: 800;
+      font-family: inherit;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: transform 0.15s, box-shadow 0.15s;
+      letter-spacing: 0.04em;
+      box-shadow: 0 4px 14px rgba(26,86,219,0.35);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(26,86,219,0.4); }
+    .btn-primary:active { transform: translateY(0); }
+
+    /* ===== STEP2 チェックリスト ===== */
+    .category-block { margin-bottom: 28px; }
+    .category-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #edf2f7;
+    }
+    .category-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .cat-a .category-icon { background: #ebf4ff; }
+    .cat-b .category-icon { background: #fef3c7; }
+    .cat-c .category-icon { background: #d1fae5; }
+    .cat-d .category-icon { background: #fce7f3; }
+    .cat-e .category-icon { background: #ede9fe; }
+    .cat-f .category-icon { background: #f1f5f9; }
+    .category-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: #2d3748;
+    }
+    .category-badge {
+      margin-left: auto;
+      font-size: 11px;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+    .cat-a .category-badge { background: #dbeafe; color: #1e40af; }
+    .cat-b .category-badge { background: #fef9c3; color: #854d0e; }
+    .cat-c .category-badge { background: #bbf7d0; color: #14532d; }
+    .cat-d .category-badge { background: #fce7f3; color: #9d174d; }
+    .cat-e .category-badge { background: #ede9fe; color: #4c1d95; }
+    .cat-f .category-badge { background: #f1f5f9; color: #64748b; }
+
+    /* チェックボックス */
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s;
+      margin-bottom: 6px;
+      user-select: none;
+    }
+    .check-item:hover { background: #f7fafc; }
+    .check-item input[type="checkbox"] { display: none; }
+    .check-box {
+      width: 22px;
+      height: 22px;
+      border: 2px solid #cbd5e0;
+      border-radius: 6px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      margin-top: 1px;
+      background: #fff;
+    }
+    .check-box svg { display: none; }
+    .check-item.checked .check-box {
+      background: #1a56db;
+      border-color: #1a56db;
+    }
+    .check-item.checked .check-box svg { display: block; }
+    .check-text { font-size: 14px; line-height: 1.55; color: #2d3748; }
+    .check-score {
+      display: none !important;
+      margin-left: auto;
+      font-size: 12px;
+      font-weight: 700;
+      color: #a0aec0;
+      white-space: nowrap;
+      padding-top: 2px;
+    }
+    .check-item.checked .check-score { color: #1a56db; }
+    .check-item.checked { background: #eff6ff; }
+
+    /* スコアカウンター */
+    .score-counter {
+      position: sticky;
+      bottom: 16px;
+      left: 0; right: 0;
+      margin: 0 auto;
+      max-width: 400px;
+      background: #1a202c;
+      color: #fff;
+      border-radius: 50px;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+      z-index: 50;
+    }
+    .score-counter .label { font-size: 13px; opacity: 0.7; }
+    .score-counter .value { font-size: 22px; font-weight: 800; color: #63b3ed; }
+
+    /* ===== STEP3 結果画面 ===== */
+    .result-hero {
+      text-align: center;
+      padding: 32px 16px 24px;
+    }
+    .result-emoji { font-size: 64px; margin-bottom: 12px; display: block; }
+    .result-level {
+      display: inline-block;
+      padding: 6px 20px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+    .result-score-text {
+      font-size: 48px;
+      font-weight: 900;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .result-score-max { font-size: 18px; color: #718096; margin-bottom: 20px; }
+    .result-title {
+      font-size: clamp(18px, 4vw, 22px);
+      font-weight: 800;
+      color: #1a202c;
+      line-height: 1.4;
+      margin-bottom: 8px;
+    }
+
+    /* スコアメーター */
+    .meter-wrap { margin: 20px 0; }
+    .meter-bar-bg {
+      height: 16px;
+      background: #e2e8f0;
+      border-radius: 20px;
+      overflow: hidden;
+    }
+    .meter-bar-fill {
+      height: 100%;
+      border-radius: 20px;
+      transition: width 1s cubic-bezier(0.4,0,0.2,1);
+      width: 0%;
+    }
+    .meter-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #a0aec0;
+      margin-top: 6px;
+    }
+
+    /* 判定カラー */
+    .lv-0 .result-level { background: #dbeafe; color: #1e40af; }
+    .lv-0 .result-score-text { color: #1a56db; }
+    .lv-0 .meter-bar-fill { background: linear-gradient(90deg, #60a5fa, #1a56db); }
+    .lv-1 .result-level { background: #fef9c3; color: #854d0e; }
+    .lv-1 .result-score-text { color: #d97706; }
+    .lv-1 .meter-bar-fill { background: linear-gradient(90deg, #fcd34d, #d97706); }
+    .lv-2 .result-level { background: #ffedd5; color: #7c2d12; }
+    .lv-2 .result-score-text { color: #ea580c; }
+    .lv-2 .meter-bar-fill { background: linear-gradient(90deg, #fb923c, #ea580c); }
+    .lv-3 .result-level { background: #fee2e2; color: #7f1d1d; }
+    .lv-3 .result-score-text { color: #dc2626; }
+    .lv-3 .meter-bar-fill { background: linear-gradient(90deg, #f87171, #dc2626); }
+
+    /* メッセージ */
+    .result-message-card {
+      background: #f8fafc;
+      border-left: 4px solid #1a56db;
+      border-radius: 0 12px 12px 0;
+      padding: 20px 20px;
+      margin: 16px 0;
+      text-align: left;
+    }
+    .result-message-card p {
+      font-size: 14px;
+      color: #2d3748;
+      line-height: 1.8;
+      white-space: pre-line;
+    }
+
+    /* CTAボタン */
+    .cta-block {
+      background: linear-gradient(135deg, #1a56db, #0e3fa8);
+      border-radius: 16px;
+      padding: 28px 24px;
+      text-align: center;
+      color: #fff;
+      margin-top: 24px;
+    }
+    .cta-block h3 { font-size: 18px; font-weight: 800; margin-bottom: 8px; }
+    .cta-block p { font-size: 13px; opacity: 0.85; margin-bottom: 20px; line-height: 1.6; }
+    .btn-cta {
+      display: inline-block;
+      background: #fff;
+      color: #1a56db;
+      font-weight: 800;
+      font-size: 16px;
+      font-family: inherit;
+      padding: 14px 32px;
+      border-radius: 50px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transition: transform 0.15s;
+      text-decoration: none;
+    }
+    .btn-cta:hover { transform: scale(1.03); }
+
+    .btn-restart {
+      display: block;
+      margin: 20px auto 0;
+      background: none;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 12px 24px;
+      font-size: 14px;
+      color: #718096;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-restart:hover { border-color: #a0aec0; color: #4a5568; }
+
+    /* ===== 非表示制御 ===== */
+    .step-view { display: none; }
+    .step-view.active { display: block; }
+
+    /* ===== フッター ===== */
+    footer {
+      text-align: center;
+      padding: 24px 16px;
+      font-size: 12px;
+      color: #a0aec0;
+    }
+
+    /* ===== レスポンシブ ===== */
+    @media (max-width: 480px) {
+      .card { padding: 24px 18px; }
+      .check-score { display: none; }
+      .score-counter { margin: 0 16px; max-width: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ヘッダー -->
+<header>
+  <div class="badge">🤖 無料 AI 診断</div>
+  <h1>業務改善 AI 診断</h1>
+  <p>所要時間：約3〜5分</p>
+</header>
+
+<!-- プログレスバー -->
+<div class="progress-wrap" id="progressBar">
+  <div class="step-item">
+    <div class="step-circle active" id="circle1">1</div>
+    <div class="step-label active" id="label1">メール登録</div>
+  </div>
+  <div class="step-line" id="line1"></div>
+  <div class="step-item">
+    <div class="step-circle" id="circle2">2</div>
+    <div class="step-label" id="label2">課題チェック</div>
+  </div>
+  <div class="step-line" id="line2"></div>
+  <div class="step-item">
+    <div class="step-circle" id="circle3">3</div>
+    <div class="step-label" id="label3">診断結果</div>
+  </div>
+</div>
+
+<main>
+
+  <!-- ===== STEP 1：メール登録 ===== -->
+  <div class="step-view active" id="step1">
+    <div class="card">
+      <p class="section-title">まず、メールアドレスを教えてください</p>
+      <p class="section-sub">診断結果のお届けに使用します。登録後すぐに診断を開始できます。</p>
+
+      <label class="form-label" for="emailInput">メールアドレス <span style="color:#e53e3e;">*</span></label>
+      <input
+        class="form-input"
+        type="email"
+        id="emailInput"
+        placeholder="example@company.co.jp"
+        autocomplete="email"
+      />
+      <div class="error-msg" id="emailError">正しいメールアドレスを入力してください。</div>
+
+      <div class="privacy-note">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a0aec0" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        ご入力いただいたメールアドレスは診断結果の送付・サービス改善のみに使用します。第三者への提供はいたしません。
+      </div>
+
+      <button class="btn-primary" onclick="goToStep2()">診断を開始する →</button>
+    </div>
+
+    <!-- 説明カード -->
+    <div class="card" style="border-top: 4px solid #1a56db;">
+      <p class="section-title" style="font-size:17px; margin-bottom:14px;">この診断でわかること</p>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; gap:12px; align-items:flex-start;">
+          <span style="font-size:22px; flex-shrink:0;">📊</span>
+          <div>
+            <div style="font-weight:700; font-size:14px; margin-bottom:2px;">業務効率化スコア</div>
+            <div style="font-size:13px; color:#718096;">20項目のチェックであなたの会社のAI活用余地を数値化します。</div>
+          </div>
+        </div>
+        <div style="display:flex; gap:12px; align-items:flex-start;">
+          <span style="font-size:22px; flex-shrink:0;">🎯</span>
+          <div>
+            <div style="font-weight:700; font-size:14px; margin-bottom:2px;">AI導入優先度の判定</div>
+            <div style="font-size:13px; color:#718096;">4段階で現状のAI導入適正をわかりやすく判定します。</div>
+          </div>
+        </div>
+        <div style="display:flex; gap:12px; align-items:flex-start;">
+          <span style="font-size:22px; flex-shrink:0;">🚀</span>
+          <div>
+            <div style="font-weight:700; font-size:14px; margin-bottom:2px;">理想の未来メッセージ</div>
+            <div style="font-size:13px; color:#718096;">AI導入後の具体的な変化・成果イメージをお伝えします。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /step1 -->
+
+
+  <!-- ===== STEP 2：課題チェック ===== -->
+  <div class="step-view" id="step2">
+    <div class="card">
+      <p class="section-title">業務課題チェックリスト</p>
+      <p class="section-sub">当てはまるものをすべて選択してください（複数選択可）。正直にチェックするほど精度の高い診断結果が得られます。</p>
+
+      <!-- カテゴリA -->
+      <div class="category-block cat-a">
+        <div class="category-header">
+          <div class="category-icon">📄</div>
+          <div class="category-name">カテゴリA｜事務・書類業務</div>
+        </div>
+        <label class="check-item" data-score="5">
+          <input type="checkbox" class="check-input" />
+          <div class="check-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="check-text">見積書・提案書の作成に時間がかかっている</span>
+          <span class="check-score">5点</span>
+        </label>
+        <label class="check-item" data-score="4">
+          <input type="checkbox" class="check-input" />
+          <div class="check-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="check-text">請求書・契約書の作成・確認に手間がかかっている</span>
+          <span class="check-score">4点</span>
+        </label>
+        <label class="check-item" data-score="3">
+          <input type="checkbox" class="check-input" />
+          <div class="check-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="check-text">報告書・日報の作成が負担になっている</span>
+          <span class="check-score">3点</span>
+        </label>
+        <label class="check-item" data-score="2">
+          <input type="checkbox" class="check-input" />
+          <div class="check-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="check-text">書類のファイリング・整理に時間を取られている</span>
+          <span class="check-score">2点</span>
+        </label>
+        <label class="check-item" data-score="3">
+          <input type="checkbox" class="check-input" />
+          <div class="check-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="check-text">議事録の作成・共有が遅れがちになっている</span>
+          <span class="check-score">3点</span>
+        </label>
+      </div>
+
+      <!-- カテゴリB -->
+      <div class="category-block cat-b">
+        <div class="category-header">
+          <div class="category-icon">💬</div>
+          <div class="category-name">カテゴリB｜顧客対応</div>
+        </div>
+        <label class="check-item" data-score="5">
+          <input type="checkbox" class="check-input" />
+          <div class="check-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="check-text">問い合わせへの返答が遅れがちになっている</span>
+          <span class="check-score">5点</span>
+        </label>
+        <label class="check-item" data-score="5">
+          <input type="checkbox" class="check-input" />
+          <div class="check-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="check-text">追客・アフターフォローが追いきれていない</span>
+          <span class="check-score">5点</span>
+        </label>
+        <label class="check-item" data-score="4">
+          <input type="checkbox" class="check-input" />
+          <div class="check-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="check-text">クレーム対応の一次受けに時間がかかっている</span>
+          <span class="check-score">4点</span>
+        </label>
+        <label class="check-item" data-score="3">
+          <input type="checkbox" class="check-input" />
+          <div class="check-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="check-text">顧客情報の管理・検索が非効率になっている</span>
+          <span class="check-score">3点</span>
+        </label>
+      </div>
+
+      <!-- カテゴリC -->
+      <div class="category-block cat-c">
+        <div class="category-header">
+          <div class="category-icon">🏗️</div>
+          <div class="category-name">カテゴリC｜現場・工程管理</div>
+        </div>
+        <label class="check-item" data-score="5">
+          <input type="checkbox" class="check-input" />
+          <div class="check-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="check-text">スケジュール・工程管理が属人化している</span>
+          <span class="check-score">5点</span>
+        </label>
+        <label class="check-item" data-score="4">
+          <input type="checkbox" class="check-input" />
+          <div class="check-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="check-text">材料・発注管理で抜け漏れやミスが起きている</span>
+          <span class="check-score">4点</span>
+        </label>
+        <label class="check-item" data-score="3">
+          <input type="checkbox" class="check-input" />
+          <div class="check-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="check-text">施工写真の整理・報告書作成に手間がかかっている</span>
+          <span class="check-score">3点</span>
+        </label>
+        <label class="check-item" data-score="3">
+          <input type="checkbox" class="check-input" />
+          <div class="check-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="check-text">職人・スタッフのシフト調整に時間がかかっている</span>
+          <span class="check-score">3点</span>
+        </label>
+      </div>
+
+      <!-- カテゴリD -->
+      <div class="category-block cat-d">
+        <div class="category-header">
+          <div class="category-icon">📣</div>
+          <div class="category-name">カテゴリD｜集客・マーケティング</div>
+        </div>
+        <label class="check-item" data-score="5">
+          <input type="checkbox" class="check-input" />
+          <div class="check-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="check-text">SNS・Web集客に手が回っていない</span>
+          <span class="check-score">5点</span>
+        </label>
+        <label class="check-item" data-score="4">
+          <input type="checkbox" class="check-input" />
+          <div class="check-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="check-text">ホームページの更新・コンテンツ作成が滞っている</span>
+          <span class="check-score">4点</span>
+        </label>
+        <label class="check-item" data-score="3">
+          <input type="checkbox" class="check-input" />
+          <div class="check-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="check-text">口コミ・レビューへの返信が追いつかない</span>
+          <span class="check-score">3点</span>
+        </label>
+      </div>
+
+      <!-- カテゴリE -->
+      <div class="category-block cat-e">
+        <div class="category-header">
+          <div class="category-icon">🏢</div>
+          <div class="category-name">カテゴリE｜社内業務</div>
+        </div>
+        <label class="check-item" data-score="4">
+          <input type="checkbox" class="check-input" />
+          <div class="check-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="check-text">新人教育・マニュアル整備ができていない</span>
+          <span class="check-score">4点</span>
+        </label>
+        <label class="check-item" data-score="4">
+          <input type="checkbox" class="check-input" />
+          <div class="check-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="check-text">事務作業・書類整理で残業が多い</span>
+          <span class="check-score">4点</span>
+        </label>
+        <label class="check-item" data-score="3">
+          <input type="checkbox" class="check-input" />
+          <div class="check-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="check-text">社内の情報共有・連絡が非効率になっている</span>
+          <span class="check-score">3点</span>
+        </label>
+        <label class="check-item" data-score="4">
+          <input type="checkbox" class="check-input" />
+          <div class="check-box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="check-text">ベテランのノウハウが属人化している</span>
+          <span class="check-score">4点</span>
+        </label>
+      </div>
+
+      <!-- カテゴリF（スコアなし） -->
+      <div class="category-block cat-f">
+        <div class="category-header">
+          <div class="category-icon">💡</div>
+          <div class="category-name">カテゴリF｜現在のAI活用状況</div>
+        </div>
+        <p style="font-size:12px; color:#a0aec0; margin-bottom:12px; padding: 0 4px;">
+          ※ こちらはスコアに加算されません。より良いご提案のために現状を教えてください。
+        </p>
+        <label class="check-item" data-score="0">
+          <input type="checkbox" class="check-input cat-f-input" />
+          <div class="check-box" style="border-color:#cbd5e0;"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="check-text">すでにChatGPTなどのAIツールを業務で使っている</span>
+        </label>
+        <label class="check-item" data-score="0">
+          <input type="checkbox" class="check-input cat-f-input" />
+          <div class="check-box" style="border-color:#cbd5e0;"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="check-text">AIツールを試したことはあるが、定着していない</span>
+        </label>
+        <label class="check-item" data-score="0">
+          <input type="checkbox" class="check-input cat-f-input" />
+          <div class="check-box" style="border-color:#cbd5e0;"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="check-text">使ってみたいが何から始めればいいかわからない</span>
+        </label>
+        <label class="check-item" data-score="0">
+          <input type="checkbox" class="check-input cat-f-input" />
+          <div class="check-box" style="border-color:#cbd5e0;"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="check-text">AIは興味があるが社内に詳しい人がいない</span>
+        </label>
+        <label class="check-item" data-score="0">
+          <input type="checkbox" class="check-input cat-f-input" />
+          <div class="check-box" style="border-color:#cbd5e0;"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="check-text">導入コストが気になって踏み出せていない</span>
+        </label>
+        <label class="check-item" data-score="0">
+          <input type="checkbox" class="check-input cat-f-input" />
+          <div class="check-box" style="border-color:#cbd5e0;"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="check-text">AIは今のところ必要ないと思っている</span>
+        </label>
+      </div>
+
+      <button class="btn-primary" onclick="goToStep3()">診断結果を見る →</button>
+    </div>
+
+  </div><!-- /step2 -->
+
+
+  <!-- ===== STEP 3：結果 ===== -->
+  <div class="step-view" id="step3">
+    <div class="card" id="resultCard">
+      <div class="result-hero">
+        <span class="result-emoji" id="resultEmoji"></span>
+        <div class="result-level" id="resultLevel"></div>
+        <div class="result-score-text" id="resultScore"></div>
+        <div class="result-score-max">/ 76点</div>
+        <div class="meter-wrap">
+          <div class="meter-bar-bg"><div class="meter-bar-fill" id="meterFill"></div></div>
+          <div class="meter-labels"><span>0</span><span>76</span></div>
+        </div>
+        <h2 class="result-title" id="resultTitle"></h2>
+      </div>
+
+      <div class="result-message-card">
+        <p id="resultMessage"></p>
+      </div>
+
+      <div class="cta-block">
+        <h3>無料相談・詳しい説明を聞く</h3>
+        <p>診断結果をもとに、御社に最適なAI活用プランをご提案します。<br>まずはお気軽にご相談ください。</p>
+        <a class="btn-cta" href="mailto:info@example.com?subject=業務改善AI診断の結果について相談したい">無料相談を申し込む</a>
+      </div>
+
+      <button class="btn-restart" onclick="restartDiagnosis()">🔄 もう一度診断する</button>
+    </div>
+  </div><!-- /step3 -->
+
+</main>
+
+<footer>© 2024 業務改善AI診断 | 住宅・リフォーム会社向け無料AI診断ツール</footer>
+
+<script>
+  /* ===== データ ===== */
+  const RESULTS = [
+    {
+      min: 0, max: 15,
+      emoji: '🔵',
+      level: '🔵 AI準備段階',
+      lvClass: 'lv-0',
+      title: '「診断を受けたこと自体が、大きな一歩です」',
+      message: `AIに興味を持ち、この診断を受けられたこと自体、素晴らしいスタートです。\n小さなところから始めるのが、AI活用成功の秘訣。たとえばこんな未来が待っています。\n\n「毎朝30分かけていたメール返信が、AIの下書きで5分で終わるようになった」\n「議事録をその場でAIがまとめてくれるので、会議後すぐ共有できるようになった」\n「ちょっとした調べものをAIに任せるようになり、頭の余裕が生まれた」\n\n大きな投資は必要ありません。今日から使える小さなAI活用が、半年後には「あの時始めてよかった」という確信に変わります。まず一緒に、御社に合った第一歩を見つけましょう。`
+    },
+    {
+      min: 16, max: 30,
+      emoji: '🟡',
+      level: '🟡 AI導入適正あり',
+      lvClass: 'lv-1',
+      title: '「今気づけたのは、最高のタイミングです」',
+      message: `御社にはAIを活用できる業務がしっかりあります。同業のリフォーム会社では、見積書作成をAIに任せることで1件あたり50分→8分に短縮した事例があります。\n\nAIを導入した先には、こんな日常が待っています。\n\n「見積もりを当日中に出せるようになり、お客様からの信頼が上がった」\n「問い合わせへの返信が早くなり、競合より先に関係を築けるようになった」\n「事務作業が減って、現場により集中できるようになった」\n「残業が週3日から週1日以下になり、スタッフのモチベーションが上がった」\n\n早すぎず、遅すぎない、まさに今が導入の黄金タイミングです。小さく始めて、確実に成果を出していきましょう。`
+    },
+    {
+      min: 31, max: 45,
+      emoji: '🟠',
+      level: '🟠 AI導入推奨',
+      lvClass: 'lv-2',
+      title: '「御社のポテンシャル、AIで一気に解放できます」',
+      message: `同規模のリフォーム会社では、AI導入によって月60時間以上の業務削減を実現した事例があります。\n\nその時間で何が変わったか。\n\n「見積もりの返信が翌日から当日中にできるようになった」\n「追客の漏れがなくなり、失注が減った」\n「現場から戻った後の事務作業がなくなり、定時で帰れるようになった」\n「空いた時間で新規営業に行けるようになり、売上が上がった」\n\n社長が現場と経営の両方を抱えているリフォーム会社だからこそ、AIが生み出す「余白」は直接、売上と生活の質に直結します。今の御社の状況は、AIを入れることで半年後に別次元の経営を実現できるステージにあります。ぜひ一緒に動き出しましょう。`
+    },
+    {
+      min: 46, max: Infinity,
+      emoji: '🔴',
+      level: '🔴 AI導入緊急推奨',
+      lvClass: 'lv-3',
+      title: '「御社は、AIで劇的に変われる会社です」',
+      message: `これだけ多くの業務でAI活用の余地があるということは、裏を返せばそれだけ大きな伸びしろがあるということです。\n\n本気で取り組んだ会社には、こんな未来が実際に起きています。\n\n「AI社員を1人採用した感覚で、事務スタッフの採用コストを削減できた」\n「24時間自動で問い合わせ対応ができるようになり、休日も新規客を取りこぼさなくなった」\n「社長の頭の中にあったノウハウをAIに学習させ、新人でも即戦力になれる仕組みができた」\n「営業・現場・事務が全部回るようになり、社長が初めて経営だけに集中できるようになった」\n\n御社が本気で取り組めば、1年後には別次元の会社になれる可能性があります。その第一歩を、私たちと一緒に踏み出しませんか。`
+    }
+  ];
+
+  /* ===== スコア計算 ===== */
+  function calcScore() {
+    let total = 0;
+    document.querySelectorAll('.check-input:not(.cat-f-input)').forEach(cb => {
+      if (cb.checked) {
+        total += parseInt(cb.closest('.check-item').dataset.score) || 0;
+      }
+    });
+    return total;
+  }
+
+  /* ===== チェックボックスのUI更新 ===== */
+  // <label>要素はクリックで自動的にcheckboxをトグルするため、
+  // changeイベントだけで状態を同期する（二重トグルを防ぐ）
+  document.querySelectorAll('.check-item').forEach(item => {
+    item.querySelector('input[type="checkbox"]').addEventListener('change', function() {
+      item.classList.toggle('checked', this.checked);
+    });
+  });
+
+  /* ===== プログレスバー更新 ===== */
+  function updateProgress(step) {
+    for (let i = 1; i <= 3; i++) {
+      const circle = document.getElementById('circle' + i);
+      const label = document.getElementById('label' + i);
+      circle.classList.remove('active', 'done');
+      label.classList.remove('active', 'done');
+      if (i < step) { circle.classList.add('done'); label.classList.add('done'); circle.innerHTML = '✓'; }
+      else if (i === step) { circle.classList.add('active'); label.classList.add('active'); circle.innerHTML = i; }
+      else { circle.innerHTML = i; }
+    }
+    for (let i = 1; i <= 2; i++) {
+      const line = document.getElementById('line' + i);
+      line.classList.toggle('done', i < step);
+    }
+  }
+
+  /* ===== STEP遷移 ===== */
+  function showStep(n) {
+    document.querySelectorAll('.step-view').forEach(el => el.classList.remove('active'));
+    document.getElementById('step' + n).classList.add('active');
+    updateProgress(n);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function goToStep2() {
+    const email = document.getElementById('emailInput').value.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const input = document.getElementById('emailInput');
+    const errorEl = document.getElementById('emailError');
+    if (!emailRegex.test(email)) {
+      input.classList.add('error');
+      errorEl.style.display = 'block';
+      input.focus();
+      return;
+    }
+    input.classList.remove('error');
+    errorEl.style.display = 'none';
+    showStep(2);
+  }
+
+  function goToStep3() {
+    const score = calcScore();
+    showResults(score);
+    showStep(3);
+    // アニメーション
+    setTimeout(() => {
+      const pct = (score / 76) * 100;
+      document.getElementById('meterFill').style.width = Math.min(pct, 100) + '%';
+    }, 300);
+  }
+
+  function showResults(score) {
+    const r = RESULTS.find(x => score >= x.min && score <= x.max);
+    const card = document.getElementById('resultCard');
+    // クラスをリセット
+    card.classList.remove('lv-0', 'lv-1', 'lv-2', 'lv-3');
+    card.classList.add(r.lvClass);
+
+    document.getElementById('resultEmoji').textContent = r.emoji;
+    document.getElementById('resultLevel').textContent = r.level;
+    document.getElementById('resultScore').textContent = score + '点';
+    document.getElementById('resultTitle').textContent = r.title;
+    document.getElementById('resultMessage').textContent = r.message;
+  }
+
+  function restartDiagnosis() {
+    // チェックをすべてリセット
+    document.querySelectorAll('.check-input').forEach(cb => {
+      cb.checked = false;
+      cb.closest('.check-item').classList.remove('checked');
+    });
+    updateLiveScore();
+    document.getElementById('meterFill').style.width = '0%';
+    showStep(1);
+  }
+
+  /* ===== Enterキーでステップ1を進める ===== */
+  document.getElementById('emailInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') goToStep2();
+  });
+</script>
+
+</body>
+</html>
